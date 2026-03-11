@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/assets/fonts/PlayfairDisplay.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/assets/fonts/PlusJakartaSans.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Election Portal — Navy + Gold */
+    --background: 0.97 0.008 258;
+    --foreground: 0.18 0.04 264;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.04 264;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.04 264;
+
+    /* Navy primary */
+    --primary: 0.28 0.1 264;
+    --primary-foreground: 0.98 0 0;
+
+    /* Light secondary */
+    --secondary: 0.94 0.015 258;
+    --secondary-foreground: 0.28 0.1 264;
+
+    /* Muted */
+    --muted: 0.94 0.01 260;
+    --muted-foreground: 0.52 0.03 264;
+
+    /* Gold accent */
+    --accent: 0.76 0.17 75;
+    --accent-foreground: 0.15 0.04 264;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.88 0.02 260;
+    --input: 0.88 0.02 260;
+    --ring: 0.28 0.1 264;
+
+    /* Chart palette */
+    --chart-1: 0.28 0.1 264;
+    --chart-2: 0.76 0.17 75;
+    --chart-3: 0.55 0.15 264;
+    --chart-4: 0.65 0.12 200;
+    --chart-5: 0.7 0.15 160;
+
+    --sidebar: 0.28 0.1 264;
+    --sidebar-foreground: 0.95 0.01 260;
+    --sidebar-primary: 0.76 0.17 75;
+    --sidebar-primary-foreground: 0.15 0.04 264;
+    --sidebar-accent: 0.35 0.1 264;
+    --sidebar-accent-foreground: 0.95 0.01 260;
+    --sidebar-border: 0.35 0.1 264;
+    --sidebar-ring: 0.76 0.17 75;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer utilities {
+  .election-gradient {
+    background: linear-gradient(135deg, oklch(0.22 0.1 264) 0%, oklch(0.32 0.12 255) 50%, oklch(0.26 0.09 270) 100%);
+  }
+
+  .gold-gradient {
+    background: linear-gradient(90deg, oklch(0.72 0.18 72) 0%, oklch(0.80 0.15 82) 100%);
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
+  }
+}

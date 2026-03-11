@@ -63,6 +63,7 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
   let voterPrincipalMap = Map.empty<Text, Principal>();
   var electionStatus : Election = { isActive = false };
+  var nextCandidateId : Nat = 1;
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -85,10 +86,12 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  public shared ({ caller }) func addCandidate(id : Nat, name : Text, partyName : Text, position : Text) : async () {
+  public shared ({ caller }) func addCandidate(name : Text, partyName : Text, position : Text) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+    let id = nextCandidateId;
+    nextCandidateId += 1;
     let candidate : Candidate = {
       id;
       name;

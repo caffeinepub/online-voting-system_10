@@ -36,7 +36,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    addCandidate(id: bigint, name: string, partyName: string, position: string): Promise<void>;
+    addCandidate(name: string, partyName: string, position: string): Promise<void>;
     addVoter(voterId: string, name: string, email: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     castVote(callerVoterId: string, candidateId: bigint, otp: string): Promise<boolean>;

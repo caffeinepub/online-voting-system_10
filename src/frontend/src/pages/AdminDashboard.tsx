@@ -46,10 +46,15 @@ interface Props {
 }
 
 interface CandidateForm {
-  id: string;
   name: string;
   partyName: string;
   position: string;
+}
+
+interface CandidateFormErrors {
+  name?: string;
+  partyName?: string;
+  position?: string;
 }
 
 interface VoterForm {
@@ -80,11 +85,11 @@ export default function AdminDashboard({ appState }: Props) {
   const [editingVoter, setEditingVoter] = useState<VoterForm | null>(null);
 
   const [candidateForm, setCandidateForm] = useState<CandidateForm>({
-    id: "",
     name: "",
     partyName: "",
     position: "",
   });
+  const [formErrors, setFormErrors] = useState<CandidateFormErrors>({});
   const [voterForm, setVoterForm] = useState<VoterForm>({
     voterId: "",
     name: "",
@@ -133,7 +138,7 @@ export default function AdminDashboard({ appState }: Props) {
   const addCandidateMut = useMutation({
     mutationFn: async (f: CandidateForm) => {
       if (!actor) throw new Error("No actor");
-      return actor.addCandidate(BigInt(f.id), f.name, f.partyName, f.position);
+      return actor.addCandidate(f.name, f.partyName, f.position);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["candidates"] });
@@ -141,13 +146,13 @@ export default function AdminDashboard({ appState }: Props) {
       setCandidateDialog(false);
       resetCandidateForm();
     },
-    onError: () => toast.error("Failed to add candidate"),
+    onError: () => toast.error("Failed to add candidate."),
   });
 
   const editCandidateMut = useMutation({
-    mutationFn: async (f: CandidateForm) => {
+    mutationFn: async (f: CandidateForm & { id: bigint }) => {
       if (!actor) throw new Error("No actor");
-      return actor.editCandidate(BigInt(f.id), f.name, f.partyName, f.position);
+      return actor.editCandidate(f.id, f.name, f.partyName, f.position);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["candidates"] });
@@ -230,8 +235,9 @@ export default function AdminDashboard({ appState }: Props) {
   });
 
   const resetCandidateForm = () => {
-    setCandidateForm({ id: "", name: "", partyName: "", position: "" });
+    setCandidateForm({ name: "", partyName: "", position: "" });
     setEditingCandidate(null);
+    setFormErrors({});
   };
 
   const resetVoterForm = () => {
@@ -247,11 +253,11 @@ export default function AdminDashboard({ appState }: Props) {
   const openEditCandidate = (c: Candidate) => {
     setEditingCandidate(c);
     setCandidateForm({
-      id: c.id.toString(),
       name: c.name,
       partyName: c.partyName,
       position: c.position,
     });
+    setFormErrors({});
     setCandidateDialog(true);
   };
 
@@ -266,10 +272,32 @@ export default function AdminDashboard({ appState }: Props) {
     setVoterDialog(true);
   };
 
+  const validateCandidateForm = (): boolean => {
+    const errors: CandidateFormErrors = {};
+    if (!candidateForm.name.trim()) {
+      errors.name = "Full name is required.";
+    } else if (candidateForm.name.trim().length < 2) {
+      errors.name = "Name must be at least 2 characters.";
+    }
+    if (!candidateForm.partyName.trim()) {
+      errors.partyName = "Political party is required.";
+    } else if (candidateForm.partyName.trim().length < 2) {
+      errors.partyName = "Party name must be at least 2 characters.";
+    }
+    if (!candidateForm.position.trim()) {
+      errors.position = "Election position is required.";
+    } else if (candidateForm.position.trim().length < 2) {
+      errors.position = "Position must be at least 2 characters.";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCandidateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateCandidateForm()) return;
     if (editingCandidate) {
-      editCandidateMut.mutate(candidateForm);
+      editCandidateMut.mutate({ ...candidateForm, id: editingCandidate.id });
     } else {
       addCandidateMut.mutate(candidateForm);
     }
@@ -807,30 +835,31 @@ export default function AdminDashboard({ appState }: Props) {
           </DialogHeader>
           <form onSubmit={handleCandidateSubmit} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="cand-id">Candidate ID</Label>
-              <Input
-                id="cand-id"
-                type="number"
-                placeholder="e.g. 1"
-                value={candidateForm.id}
-                onChange={(e) =>
-                  setCandidateForm((f) => ({ ...f, id: e.target.value }))
-                }
-                disabled={!!editingCandidate}
-                data-ocid="admin.candidates.id.input"
-              />
-            </div>
-            <div className="space-y-1.5">
               <Label htmlFor="cand-name">Full Name</Label>
               <Input
                 id="cand-name"
                 placeholder="e.g. Sarah Mitchell"
                 value={candidateForm.name}
-                onChange={(e) =>
-                  setCandidateForm((f) => ({ ...f, name: e.target.value }))
-                }
+                onChange={(e) => {
+                  setCandidateForm((f) => ({ ...f, name: e.target.value }));
+                  if (formErrors.name)
+                    setFormErrors((err) => ({ ...err, name: undefined }));
+                }}
                 data-ocid="admin.candidates.name.input"
+                className={
+                  formErrors.name
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
+              {formErrors.name && (
+                <span
+                  className="text-xs text-destructive"
+                  data-ocid="admin.candidates.dialog.error_state"
+                >
+                  {formErrors.name}
+                </span>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cand-party">Political Party</Label>
@@ -838,11 +867,29 @@ export default function AdminDashboard({ appState }: Props) {
                 id="cand-party"
                 placeholder="e.g. Democratic Alliance"
                 value={candidateForm.partyName}
-                onChange={(e) =>
-                  setCandidateForm((f) => ({ ...f, partyName: e.target.value }))
-                }
+                onChange={(e) => {
+                  setCandidateForm((f) => ({
+                    ...f,
+                    partyName: e.target.value,
+                  }));
+                  if (formErrors.partyName)
+                    setFormErrors((err) => ({ ...err, partyName: undefined }));
+                }}
                 data-ocid="admin.candidates.party.input"
+                className={
+                  formErrors.partyName
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
+              {formErrors.partyName && (
+                <span
+                  className="text-xs text-destructive"
+                  data-ocid="admin.candidates.dialog.error_state"
+                >
+                  {formErrors.partyName}
+                </span>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cand-position">Election Position</Label>
@@ -850,11 +897,26 @@ export default function AdminDashboard({ appState }: Props) {
                 id="cand-position"
                 placeholder="e.g. President, Mayor"
                 value={candidateForm.position}
-                onChange={(e) =>
-                  setCandidateForm((f) => ({ ...f, position: e.target.value }))
-                }
+                onChange={(e) => {
+                  setCandidateForm((f) => ({ ...f, position: e.target.value }));
+                  if (formErrors.position)
+                    setFormErrors((err) => ({ ...err, position: undefined }));
+                }}
                 data-ocid="admin.candidates.position.input"
+                className={
+                  formErrors.position
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
+              {formErrors.position && (
+                <span
+                  className="text-xs text-destructive"
+                  data-ocid="admin.candidates.dialog.error_state"
+                >
+                  {formErrors.position}
+                </span>
+              )}
             </div>
             <DialogFooter>
               <Button

@@ -119,7 +119,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    addCandidate(id: bigint, name: string, partyName: string, position: string): Promise<void>;
+    addCandidate(name: string, partyName: string, position: string): Promise<void>;
     addVoter(voterId: string, name: string, email: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     castVote(callerVoterId: string, candidateId: bigint, otp: string): Promise<boolean>;
@@ -158,17 +158,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addCandidate(arg0: bigint, arg1: string, arg2: string, arg3: string): Promise<void> {
+    async addCandidate(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.addCandidate(arg0, arg1, arg2, arg3);
+                const result = await this.actor.addCandidate(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addCandidate(arg0, arg1, arg2, arg3);
+            const result = await this.actor.addCandidate(arg0, arg1, arg2);
             return result;
         }
     }
